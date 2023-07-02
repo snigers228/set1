@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My first Vue app</title>
+</head>
+<body>
+<div class="nav-bar"></div>
+
+<div id="app">
+  <div class="cart">
+  
+    <div v-show="'cart'">Корзина:
+        <p v-if="!cart.length"> пусто</p>
+        <ul v-else>
+            <li v-for="(cart, index) in cart" :key="index">
+              <p>{{ cart.join() }}</p>
+              <p class="two">
+              <button @click="deleteCart(index)" class="btn1"
+              
+              >delete</button>
+              
+            </li>
+        </ul>
+    </div>
+    <p v-if="!cart.length"></p>
+    
+    <button @click="cleanCart()" class="btn2"
+     v-else>очистить корзину</button></p>
+  </div>
+  <product :premium="premium" @add-to-cart="updateCart"
+  
+  ></product>
+</div> 
+
+
+<script src="https://unpkg.com/vue@2"></script>
+ <script>
+var eventBus = new Vue()
+
+Vue.component('product', {
+    props: {
+      premium: {
+        type: Boolean,
+        required: true
+      }
+    },
+    template: `
+     <div class="product">
+          
+        <div class="product-image">
+          <img :src="image" />
+        </div>
+  
+        <div class="product-info">
+            <h1>{{ title }}</h1>
+            <p v-if="inStock">В наличии: {{inStock}}</p>
+            <p v-else>Нет в наличии</p>
+  
+            <info-tabs :shipping="this.variants[this.selectedVariant].variantShipping" :details="this.variants[this.selectedVariant].variantDetails"></info-tabs>
+  
+            <div class="color-box"
+                 v-for="(variant, index) in variants" 
+                 :key="variant.variantId"
+                 @click="updateProduct(index)"
+                 ><img :src="variant.variantImage" >
+            </div> 
+  
+            <button v-on:click="addToCart" 
+              :disabled="!inStock"
+              :class="{ disabledButton: !inStock }"
+              class="one"
+              >
+              В корзину
+            </button>
+  
+         </div> 
+
+         <product-tabs :reviews="reviews"></product-tabs>
+         
+      
+      </div>
+     `,
+    data() {
+      return {
+        product: 'Колесный диск',
+          brand: 'Kefteme',
+          selectedVariant: 0,
+       
+          variants: [
+          {
+              variantId: 2234,
+              variantImage: 'https://cdn2.kolesa-darom.ru/upload/optimized_cache/resize_cache/iblock/6e8/600_600_1/6e857881a95d3bd53d1ed432db99000d.jpg',
+              variantQuantity: 10  , 
+              variantDetails:  [ " Magnetto", " 5.5xR14 4x98", " ET35 DIA58.6"],
+              variantShipping: '1320 р.'
+            },
+            {
+              variantId: 2235,
+              variantImage: 'https://cdn2.kolesa-darom.ru/upload/optimized_cache/resize_cache/iblock/b88/600_600_1/b8898680ca50494597581f7ea324c8b7.jpg',
+              variantQuantity: 0 ,
+              variantDetails:  [ " СКАД Вертикас", " 6xR15 5x100", " ET38 DIA57.1"],
+              variantShipping: '3830 р. '
+            },
+             {
+              variantId: 2236,
+              variantImage: 'https://cdn2.kolesa-darom.ru/upload/optimized_cache/resize_cache/iblock/a60/600_600_1/a60f3470f234b149dbb8ca20866c4bd5.jpg',
+              variantQuantity: 12     ,
+              variantDetails:  [ " KHOMEN KHW1602", " 6.5xR16 5x139.7", " ET35 DIA98.5"],
+              variantShipping:' 6650 р.'
+            },
+            {
+              variantId: 2237,
+              variantImage: 'https://cdn2.kolesa-darom.ru/upload/optimized_cache/resize_cache/iblock/7c9/600_600_1/7c92b07206db7b44e9aabb51648d17e5.jpg',
+              variantQuantity: 34     ,
+              variantDetails:  [ " КиК Статус М", " 5xR14 4x98"," ET35 DIA58.5"],
+              variantShipping: '5160 p.'
+            }
+          ],
+          reviews: []
+      }
+    },
+      methods: {
+        addToCart() {
+            this.$emit('add-to-cart',  this.variants[this.selectedVariant].variantDetails)
+            this.variants[this.selectedVariant].variantQuantity -=1
+        },
+        updateProduct(index) {  
+            this.selectedVariant = index
+        },
+        addCart() {
+            this.variants[this.selectedVariant].variantQuantity +=1
+        }
+      },
+      computed: {
+        title() {
+              return this.brand + ' ' + this.product  
+          },
+          image(){
+              return this.variants[this.selectedVariant].variantImage
+          },
+          inStock(){
+              return this.variants[this.selectedVariant].variantQuantity
+          },
+          details(){
+            return this.variants[this.selectedVariant].variantDetails
+          },
+          shipping() {
+            return this.variants[this.selectedVariant].variantShipping
+          }
+      },
+      mounted() {
+        eventBus.$on('review-submitted', productReview => {
+          this.reviews.push(productReview)
+        })
+      }
+  })
+
+
+
+  Vue.component('product-review', {
+    template: `
+    <form class="review-form" @submit.prevent="onSubmit">
+
+      <p>
+        <label for="name">Имя:</label>
+        <input id="name" v-model="name">
+      </p>
+
+      <p>
+        <label for="review">Отзыв:</label>      
+        <textarea id="review" v-model="review"></textarea>
+      </p>
+
+      <p>
+        <label for="rating">Оценка:</label>
+        <select id="rating" v-model.number="rating">
+          <option>5</option>
+          <option>4</option>
+          <option>3</option>
+          <option>2</option>
+          <option>1</option>
+        </select>
+      </p>
+     
+
+      <p>
+        <input type="submit" value="Submit">  
+      </p>    
+  
+    </form>
+    `,
+    data() {
+      return {
+        name: null,
+        review: null,
+        rating: null,
+        errors: []
+      }
+    },
+    methods: {
+      onSubmit() {
+        this.errors = []
+        if (this.name && this.review && this.rating) {
+          let productReview = {
+            name: this.name,
+            review: this.review,
+            rating: this.rating
+          }
+          eventBus.$emit('review-submitted', productReview)
+          this.name = null
+          this.review = null
+          this.rating = null
+        }
+        else {
+          if(!this.name) this.errors.push("Name required.")
+          if(!this.review) this.errors.push("Review required.")
+          if(!this.rating) this.errors.push("Rating required.")
+        }
+      }
+    }
+  })
+
+  Vue.component('product-tabs', {
+    props: {
+      reviews: {
+        type: Array,
+        required: false
+      }
+    },
+    template: `
+      <div>
+      
+        <ul>
+          <span class="tabs" 
+                :class="{ activeTab: selectedTab === tab }"
+                v-for="(tab, index) in tabs"
+                @click="selectedTab = tab"
+                :key="tab"
+          >{{ tab }}</span>
+        </ul>
+
+        <div v-show="selectedTab === 'Отзывы'">
+            <p v-if="!reviews.length">Пока нет отзывов.</p>
+            <ul v-else>
+                <li v-for="(review, index) in reviews" :key="index">
+                  <p>{{ review.name }}</p>
+                  <p>Оценка:{{ review.rating }}</p>
+                  <p>{{ review.review }}</p>
+                 
+                </li>
+            </ul>
+        </div>
+
+        <div v-show="selectedTab === 'Оставить отзыв'">
+          <product-review></product-review>
+        </div>
+    
+      </div>
+    `,
+    data() {
+      return {
+        tabs: ['Отзывы', 'Оставить отзыв'],
+        selectedTab: 'Отзывы'
+      }
+    }
+  })
+
+Vue.component('info-tabs', {
+    props: {
+      shipping: {
+        required: true
+      },
+      details: {
+        type: Array,
+        required: true
+      }
+    },
+    template: `
+      <div>
+      
+        <ul>
+          <span class="tabs" 
+                :class="{ activeTab: selectedTab === tab }"
+                v-for="(tab, index) in tabs"
+                @click="selectedTab = tab"
+                :key="tab"
+          >{{ tab }}</span>
+        </ul>
+
+        <div v-show="selectedTab === 'Цена'">
+          <p>{{ shipping }}</p>
+        </div>
+
+        <div v-show="selectedTab === 'Характеристики'">
+          <ul>
+            <li v-for="detail in details">{{ detail }}</li>
+          </ul>
+        </div>
+    
+      </div>
+    `,
+    data() {
+      return {
+        tabs: ['Цена', 'Характеристики'],
+        selectedTab: 'Цена'
+      }
+    }
+  })
+
+
+
+  
+  var app = new Vue({
+      el: '#app',
+      data: {
+        premium: true,
+        cart: []
+      },
+      methods: {
+        updateCart(id) {
+          this.cart.push(id)
+        },
+        deleteCart(index) {
+            this.cart.splice(index,1)
+            
+        },
+        cleanCart(){
+            this.cart.splice(0)
+
+        }
+      },
+      cart: {
+        type: Boolean,
+        required: true
+      }
+  })
+
+  
+ </script>
+ <style>
+body {
+    font-family: tahoma;
+    color:#282828;
+    margin: 0px;
+  }
+  
+  .nav-bar {
+    background: linear-gradient(-90deg, rgb(31,31,31), rgb(189,189,197));
+    height: 60px;
+    margin-bottom: 15px;
+  }
+
+  .product {
+    display: flex;
+    flex-flow: wrap;
+    padding: 1rem;
+  }
+
+  img {
+    border: 1px solid #d8d8d8;
+    width: 70%;
+    margin: 40px;
+    box-shadow: 0px .5px 1px #d8d8d8;
+  }
+  
+  .product-image {
+    width: 80%;
+  }
+  
+  .product-image,
+  .product-info {
+    margin-top: 10px;
+    width: 50%;
+  }
+  
+  .color-box {
+    width: 80px;
+    height: 80px;
+    margin: 5px;
+  }
+  
+  .cart {
+    margin-right: 25px;
+    float: right;
+    
+    padding: 5px 20px;
+    margin-top: 700px;
+    position: absolute;
+    margin-left: 50%;
+  }
+  
+  .one {
+    margin-top: 30px;
+    border: none;
+    background-color: #1E95EA;
+    color: white;
+    height: 40px;
+    width: 100px;
+    font-size: 14px;
+  } 
+  
+  .disabledButton {
+    background-color: #d8d8d8;
+  }
+  
+  .review-form {
+    width: 400px;
+    padding: 20px;
+    margin: 40px;
+    border: 1px solid #d8d8d8;
+  }
+  
+  input {
+    width: 100%;  
+    height: 25px;
+    margin-bottom: 20px;
+  }
+  
+  textarea {
+    width: 100%;
+    height: 60px;
+  }
+
+  .tabs {
+    margin-left: 20px;
+    cursor: pointer;
+  }
+
+  .activeTab {
+    color: #16C0B0;
+    text-decoration: underline;
+  }
+  .btn1{
+    margin-top: 0px;
+    border: none;
+    background-color: #5a6267;
+    color: white;
+    height: 25px;
+    width: 80px;
+    font-size: 14px;
+  }
+.two{
+    text-align: center;
+}
+  .btn2{
+    margin-top: 0px;
+    border: none;
+    background-color: #5a6267;
+    color: white;
+    height: 30px;
+    width: 160px;
+    font-size: 14px;
+  }
+ </style>
+</body>
+</html>
